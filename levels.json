@@ -1,0 +1,39 @@
+{
+  "updated_at": "2026-11-24T15:30:00+00:00",
+  "source": "Initial Seed (Run Actions to refresh)",
+  "spot_xauusd": 3560.00,
+  "spot_gld": 328.41,
+  "ratio": 10.8401,
+  "levels": {
+    "call_wall": 3636.00,
+    "put_wall": 3494.00,
+    "gamma_flip": 3550.00,
+    "peak_gex": 3580.00,
+    "iv_wall_above": 3615.00,
+    "iv_wall_below": 3510.00
+  },
+  "top_positive_gex": [
+    { "strike": 3580.00, "gex": 4125000.0 },
+    { "strike": 3636.00, "gex": 3890000.0 },
+    { "strike": 3555.00, "gex": 2150000.0 },
+    { "strike": 3600.00, "gex": 1980000.0 },
+    { "strike": 3530.00, "gex": 1420000.0 }
+  ],
+  "top_negative_gex": [
+    { "strike": 3494.00, "gex": -3640000.0 },
+    { "strike": 3510.00, "gex": -2410000.0 },
+    { "strike": 3470.00, "gex": -1850000.0 },
+    { "strike": 3520.00, "gex": -1210000.0 },
+    { "strike": 3450.00, "gex": -980000.0 }
+  ],
+  "strike_profile": [
+    { "strike": 3470.00, "gld_strike": 320.11, "net_gex": -1850000, "cum_gex": -1850000, "call_gex": 120000, "put_gex": -1970000 },
+    { "strike": 3494.00, "gld_strike": 322.32, "net_gex": -3640000, "cum_gex": -5490000, "call_gex": 210000, "put_gex": -3850000 },
+    { "strike": 3510.00, "gld_strike": 323.80, "net_gex": -2410000, "cum_gex": -7900000, "call_gex": 340000, "put_gex": -2750000 },
+    { "strike": 3530.00, "gld_strike": 325.64, "net_gex": 1420000, "cum_gex": -6480000, "call_gex": 1920000, "put_gex": -500000 },
+    { "strike": 3550.00, "gld_strike": 327.49, "net_gex": 150000, "cum_gex": -6330000, "call_gex": 1150000, "put_gex": -1000000 },
+    { "strike": 3580.00, "gld_strike": 330.26, "net_gex": 4125000, "cum_gex": -2205000, "call_gex": 4425000, "put_gex": -300000 },
+    { "strike": 3600.00, "gld_strike": 332.10, "net_gex": 1980000, "cum_gex": -225000, "call_gex": 2180000, "put_gex": -200000 },
+    { "strike": 3636.00, "gld_strike": 335.42, "net_gex": 3890000, "cum_gex": 3665000, "call_gex": 4010000, "put_gex": -120000 }
+  ]
+}

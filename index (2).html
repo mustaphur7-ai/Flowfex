@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>XAUUSD Gamma Exposure (GEX) & Signal Terminal</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --card: #131722;
+      --border: #242b3d;
+      --text: #e2e8f0;
+      --muted: #8b9bb4;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --purple: #a855f7;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.45;
+      padding: 12px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .title-group h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.3px; }
+    .meta { font-size: 0.85rem; color: var(--muted); margin-top: 3px; }
+    .price-box { text-align: right; }
+    .live-price { font-size: 1.65rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .live-status { font-size: 0.82rem; color: var(--green); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 2fr 1fr; }
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Signal Panel */
+    .signal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .signal-badge {
+      font-size: 1.45rem;
+      font-weight: 900;
+      padding: 8px 18px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+      text-align: center;
+      min-width: 115px;
+    }
+    .sig-WAIT { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .sig-BUY { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .sig-SELL { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+    .regime-pill {
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #1e2536;
+      border: 1px solid var(--border);
+    }
+    .trade-plan {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .plan-cell {
+      background: #0e121b;
+      padding: 10px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .plan-cell span { display: block; font-size: 0.78rem; color: var(--muted); }
+    .plan-cell strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+    /* Chart */
+    #chart-container { width: 100%; height: 380px; position: relative; }
+
+    /* GEX Bars */
+    .gex-bar-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 80px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .bar-track {
+      background: #0e121b;
+      height: 15px;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+    }
+    .bar-fill-pos { background: var(--green); height: 100%; }
+    .bar-fill-neg { background: var(--red); height: 100%; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+    th, td { padding: 9px 6px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+
+    /* Buttons & Inputs */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    button {
+      background: #1f2739;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #2a354d; }
+    button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 3px; }
+    .field input {
+      width: 100%;
+      background: #0e121b;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 9px;
+      border-radius: 6px;
+      font-size: 0.92rem;
+    }
+
+    /* Alert Log */
+    #alert-log { max-height: 170px; overflow-y: auto; font-size: 0.85rem; color: var(--muted); }
+    #alert-log div { padding: 6px 0; border-bottom: 1px solid #1b2130; }
+
+    /* Full-Screen Alarm Banner */
+    #alarm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(185, 28, 28, 0.96);
+      color: #fff;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      animation: pulseBg 1s infinite alternate;
+    }
+    #alarm-overlay.buy-mode { background: rgba(4, 120, 87, 0.96); }
+    @keyframes pulseBg { from { opacity: 0.92; } to { opacity: 1; } }
+    #alarm-title { font-size: 2.3rem; font-weight: 900; margin-bottom: 10px; }
+    #alarm-sub { font-size: 1.15rem; margin-bottom: 24px; max-width: 480px; }
+    .alarm-actions { display: flex; gap: 14px; }
+    .alarm-actions button { font-size: 1.05rem; padding: 12px 22px; background: #0b0e14; color: #fff; border: none; }
+
+    footer {
+      margin-top: 16px;
+      padding: 12px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Full-Screen POI Alarm Modal -->
+  <div id="alarm-overlay">
+    <div id="alarm-title">BUY NOW at 3,494.00</div>
+    <div id="alarm-sub">Price entered Put Wall POI zone. Rejecting support in stabilizing regime.</div>
+    <div class="alarm-actions">
+      <button onclick="snoozeAlarm()">Snooze 10m</button>
+      <button onclick="dismissAlarm()">Dismiss</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="title-group">
+      <h1>XAUUSD Options Gamma (GEX) Terminal</h1>
+      <div class="meta">
+        Last updated: <span id="last-updated">Loading...</span> |
+        GLD Ratio: <span id="gld-ratio">--</span> |
+        Source: <span id="data-source">--</span>
+      </div>
+    </div>
+    <div class="price-box">
+      <div class="live-price" id="live-price">----.--</div>
+      <div class="live-status" id="feed-status">Connecting live feed...</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Left Column: Chart & Cumulative GEX -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="card">
+        <div class="card-title">
+          <span>XAUUSD Live Price & Gamma Levels</span>
+          <span id="chart-engine-tag" style="font-size:0.75rem;">Red: Call Wall | Green: Put Wall | Yellow: Flip | Purple: Peak</span>
+        </div>
+        <div id="chart-container"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Strike Net & Cumulative GEX Profile</span>
+          <span style="font-size:0.75rem;">+GEX (Green) / -GEX (Red)</span>
+        </div>
+        <div id="gex-bars"></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Signals, Levels Table, Controls & Logs -->
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <!-- Signal Card -->
+      <div class="card">
+        <div class="card-title"><span>Live Actionable Signal</span></div>
+        <div class="signal-header">
+          <div id="signal-badge" class="signal-badge sig-WAIT">WAIT</div>
+          <div id="regime-pill" class="regime-pill">Regime: Calculating...</div>
+        </div>
+        <div id="signal-reason" style="font-size:0.9rem; color:var(--muted);">
+          Monitoring price action relative to GEX walls...
+        </div>
+        <div class="trade-plan">
+          <div class="plan-cell"><span>ENTRY</span><strong id="plan-entry">--</strong></div>
+          <div class="plan-cell"><span>STOP</span><strong id="plan-stop" style="color:var(--red);">--</strong></div>
+          <div class="plan-cell"><span>TARGET</span><strong id="plan-target" style="color:var(--green);">--</strong></div>
+        </div>
+        <div class="btn-row">
+          <button class="primary" onclick="enableAudioAndNotifs()">Enable Sound & Push</button>
+          <button onclick="triggerTestAlarm()">Test Alarm</button>
+        </div>
+      </div>
+
+      <!-- Levels Distance Table -->
+      <div class="card">
+        <div class="card-title"><span>Derived Gamma & IV Levels</span></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>XAUUSD</th>
+              <th>Dist ($)</th>
+              <th>Dist (%)</th>
+            </tr>
+          </thead>
+          <tbody id="levels-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Settings Panel -->
+      <div class="card">
+        <div class="card-title"><span>Signal & Alert Settings</span></div>
+        <div class="settings-grid">
+          <div class="field">
+            <label>POI Zone Band (%)</label>
+            <input type="number" id="cfg-poi" step="0.02" value="0.10" onchange="saveSettings()" />
+          </div>
+          <div class="field">
+            <label>Stop Buffer (%)</label>
+            <input type="number" id="cfg-stop" step="0.05" value="0.15" onchange="saveSettings()" />
+          </div>
+          <div class="field">
+            <label>Rejection Bounce ($)</label>
+            <input type="number" id="cfg-rej" step="0.5" value="1.50" onchange="saveSettings()" />
+          </div>
+          <div class="field">
+            <label>Poll Interval (sec)</label>
+            <input type="number" id="cfg-poll" min="5" max="30" value="6" onchange="saveSettings()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert History Log -->
+      <div class="card">
+        <div class="card-title">
+          <span>Triggered Alert Log</span>
+          <button style="padding:3px 9px; font-size:0.78rem;" onclick="clearLogs()">Clear</button>
+        </div>
+        <div id="alert-log">No alerts triggered yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>Disclaimer:</strong> All gamma levels, market regimes, and BUY/SELL alerts displayed on this page are for informational and educational purposes only and do not constitute financial or investment advice.
+  </footer>
+
+  <script>
+    // Built-in fallback seed data so dashboard works immediately even if data/levels.json is missing
+    const FALLBACK_DATA = {
+      updated_at: "2026-11-24T15:30:00+00:00",
+      source: "Built-in Fallback Seed",
+      spot_xauusd: 3613.92,
+      spot_gld: 333.38,
+      ratio: 10.8401,
+      levels: {
+        call_wall: 3636.00,
+        put_wall: 3494.00,
+        gamma_flip: 3550.00,
+        peak_gex: 3580.00,
+        iv_wall_above: 3625.00,
+        iv_wall_below: 3510.00
+      },
+      top_positive_gex: [
+        { strike: 3580.00, gex: 4125000.0 },
+        { strike: 3636.00, gex: 3890000.0 },
+        { strike: 3555.00, gex: 2150000.0 }
+      ],
+      top_negative_gex: [
+        { strike: 3494.00, gex: -3640000.0 },
+        { strike: 3510.00, gex: -2410000.0 }
+      ],
+      strike_profile: [
+        { strike: 3470.00, net_gex: -1850000 },
+        { strike: 3494.00, net_gex: -3640000 },
+        { strike: 3510.00, net_gex: -2410000 },
+        { strike: 3530.00, net_gex: 1420000 },
+        { strike: 3550.00, net_gex: 150000 },
+        { strike: 3580.00, net_gex: 4125000 },
+        { strike: 3600.00, net_gex: 1980000 },
+        { strike: 3636.00, net_gex: 3890000 }
+      ]
+    };
+
+    let gexData = null;
+    let currentPrice = null;
+    let recentPrices = [];
+    let candles = [];
+    let chart = null;
+    let candleSeries = null;
+    let useCanvasFallback = false;
+    let priceLines = [];
+    let audioCtx = null;
+    let alarmInterval = null;
+    let snoozedUntil = 0;
+    let lastAlertKey = "";
+
+    const defaultCfg = { poiPct: 0.10, stopPct: 0.15, rejDollar: 1.50, pollSec: 6 };
+    let cfg = JSON.parse(localStorage.getItem("gex_cfg") || "null") || defaultCfg;
+
+    function loadSettingsUI() {
+      document.getElementById("cfg-poi").value = cfg.poiPct;
+      document.getElementById("cfg-stop").value = cfg.stopPct;
+      document.getElementById("cfg-rej").value = cfg.rejDollar;
+      document.getElementById("cfg-poll").value = cfg.pollSec;
+    }
+
+    function saveSettings() {
+      cfg.poiPct = parseFloat(document.getElementById("cfg-poi").value) || 0.10;
+      cfg.stopPct = parseFloat(document.getElementById("cfg-stop").value) || 0.15;
+      cfg.rejDollar = parseFloat(document.getElementById("cfg-rej").value) || 1.50;
+      cfg.pollSec = Math.max(5, parseInt(document.getElementById("cfg-poll").value) || 6);
+      localStorage.setItem("gex_cfg", JSON.stringify(cfg));
+      if (currentPrice) evaluateAll(currentPrice);
+    }
+
+    // --- Dynamic Multi-CDN Script Loader ---
+    function loadScript(url) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = url;
+        s.async = true;
+        s.onload = () => resolve(true);
+        s.onerror = () => reject(new Error("Failed: " + url));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function ensureChartLibrary() {
+      if (typeof LightweightCharts !== "undefined") return true;
+      const cdns = [
+        "https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.2.0/lightweight-charts.standalone.production.min.js",
+        "https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js",
+        "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"
+      ];
+      for (const url of cdns) {
+        try {
+          await loadScript(url);
+          if (typeof LightweightCharts !== "undefined") return true;
+        } catch (e) {
+          console.warn(e.message);
+        }
+      }
+      return false;
+    }
+
+    // --- Built-in HTML5 Canvas Candlestick Renderer (100% offline/adblock proof) ---
+    function drawFallbackCanvasChart() {
+      const container = document.getElementById("chart-container");
+      if (!candles.length) return;
+      let canvas = document.getElementById("fallback-canvas");
+      if (!canvas) {
+        container.innerHTML = "";
+        canvas = document.createElement("canvas");
+        canvas.id = "fallback-canvas";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        container.appendChild(canvas);
+      }
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width;
+      const H = rect.height;
+      const padRight = 68;
+      const padTop = 16;
+      const padBottom = 24;
+      const plotW = W - padRight;
+      const plotH = H - padTop - padBottom;
+
+      ctx.fillStyle = "#131722";
+      ctx.fillRect(0, 0, W, H);
+
+      const levelList = [];
+      if (gexData && gexData.levels) {
+        const L = gexData.levels;
+        if (L.call_wall) levelList.push({ price: L.call_wall, color: "#ef4444", label: "Call Wall", dashed: false });
+        if (L.put_wall) levelList.push({ price: L.put_wall, color: "#10b981", label: "Put Wall", dashed: false });
+        if (L.gamma_flip) levelList.push({ price: L.gamma_flip, color: "#f59e0b", label: "Flip", dashed: false });
+        if (L.peak_gex) levelList.push({ price: L.peak_gex, color: "#a855f7", label: "Peak GEX", dashed: false });
+        if (L.iv_wall_above) levelList.push({ price: L.iv_wall_above, color: "#38bdf8", label: "IV +", dashed: true });
+        if (L.iv_wall_below) levelList.push({ price: L.iv_wall_below, color: "#38bdf8", label: "IV -", dashed: true });
+      }
+
+      let minP = Infinity, maxP = -Infinity;
+      candles.forEach(c => {
+        if (c.low < minP) minP = c.low;
+        if (c.high > maxP) maxP = c.high;
+      });
+      levelList.forEach(lv => {
+        if (lv.price < minP) minP = lv.price;
+        if (lv.price > maxP) maxP = lv.price;
+      });
+      const range = Math.max(maxP - minP, 5);
+      minP -= range * 0.08;
+      maxP += range * 0.08;
+
+      const yOf = (p) => padTop + ((maxP - p) / (maxP - minP)) * plotH;
+
+      // Grid lines & right axis price ticks
+      ctx.strokeStyle = "#1e2536";
+      ctx.lineWidth = 1;
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "left";
+      for (let i = 0; i <= 5; i++) {
+        const p = minP + ((maxP - minP) * i) / 5;
+        const y = yOf(p);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotW, y);
+        ctx.stroke();
+        ctx.fillStyle = "#8b9bb4";
+        ctx.fillText(p.toFixed(1), plotW + 6, y + 4);
+      }
+
+      // Draw Gamma & IV Horizontal Lines + Right Axis Tags
+      levelList.forEach(lv => {
+        const y = yOf(lv.price);
+        ctx.save();
+        ctx.strokeStyle = lv.color;
+        ctx.lineWidth = lv.dashed ? 1.2 : 1.8;
+        if (lv.dashed) ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotW, y);
+        ctx.stroke();
+        ctx.restore();
+
+        // Label on chart left
+        ctx.fillStyle = lv.color;
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(`${lv.label} (${lv.price.toFixed(0)})`, 6, y - 4);
+
+        // Price tag on right axis
+        ctx.fillStyle = lv.color;
+        ctx.fillRect(plotW + 2, y - 9, padRight - 4, 18);
+        ctx.fillStyle = "#0b0e14";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(lv.price.toFixed(1), plotW + 6, y + 3);
+      });
+
+      // Draw Candlesticks
+      const count = candles.length;
+      const step = plotW / Math.max(count, 10);
+      const bodyW = Math.max(3, Math.min(12, step * 0.65));
+
+      candles.forEach((c, idx) => {
+        const x = idx * step + step * 0.5;
+        const isUp = c.close >= c.open;
+        const col = isUp ? "#10b981" : "#ef4444";
+        ctx.strokeStyle = col;
+        ctx.fillStyle = col;
+        ctx.lineWidth = 1.2;
+
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(x, yOf(c.high));
+        ctx.lineTo(x, yOf(c.low));
+        ctx.stroke();
+
+        // Body
+        const yOpen = yOf(c.open);
+        const yClose = yOf(c.close);
+        const top = Math.min(yOpen, yClose);
+        const height = Math.max(2, Math.abs(yClose - yOpen));
+        ctx.fillRect(x - bodyW / 2, top, bodyW, height);
+      });
+
+      // Live Spot Price Tag on Right Axis
+      if (currentPrice) {
+        const yLive = yOf(currentPrice);
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillRect(plotW + 2, yLive - 10, padRight - 4, 20);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(currentPrice.toFixed(2), plotW + 5, yLive + 4);
+      }
+    }
+
+    async function initChart() {
+      const container = document.getElementById("chart-container");
+      const loaded = await ensureChartLibrary();
+
+      if (loaded && typeof LightweightCharts !== "undefined") {
+        useCanvasFallback = false;
+        chart = LightweightCharts.createChart(container, {
+          layout: { background: { color: "#131722" }, textColor: "#cbd5e1" },
+          grid: { vertLines: { color: "#1e2536" }, horzLines: { color: "#1e2536" } },
+          rightPriceScale: { borderColor: "#242b3d" },
+          timeScale: { borderColor: "#242b3d", timeVisible: true, secondsVisible: true },
+          crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        });
+
+        candleSeries = chart.addCandlestickSeries({
+          upColor: "#10b981",
+          downColor: "#ef4444",
+          borderVisible: false,
+          wickUpColor: "#10b981",
+          wickDownColor: "#ef4444",
+        });
+
+        window.addEventListener("resize", () => {
+          if (chart) chart.applyOptions({ width: container.clientWidth });
+        });
+      } else {
+        // Seamless fallback to built-in HTML5 Canvas chart if CDNs are blocked
+        useCanvasFallback = true;
+        window.addEventListener("resize", drawFallbackCanvasChart);
+      }
+    }
+
+    async function fetchHistoricalCandles(basePrice) {
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1m&limit=50", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          candles = data.map(k => ({
+            time: Math.floor(k[0] / 1000),
+            open: parseFloat(k[1]),
+            high: parseFloat(k[2]),
+            low: parseFloat(k[3]),
+            close: parseFloat(k[4]),
+          }));
+          renderChartData();
+          return;
+        }
+      } catch (_) {}
+
+      const now = Math.floor(Date.now() / 1000);
+      const bucket = now - (now % 60);
+      candles = [];
+      let p = basePrice;
+      for (let i = 35; i > 0; i--) {
+        const t = bucket - i * 60;
+        const delta = (Math.random() - 0.5) * 1.4;
+        const open = p;
+        const close = +(p + delta).toFixed(2);
+        const high = +(Math.max(open, close) + Math.random() * 0.6).toFixed(2);
+        const low = +(Math.min(open, close) - Math.random() * 0.6).toFixed(2);
+        candles.push({ time: t, open, high, low, close });
+        p = close;
+      }
+      candles.push({ time: bucket, open: p, high: basePrice, low: basePrice, close: basePrice });
+      renderChartData();
+    }
+
+    function renderChartData() {
+      if (useCanvasFallback) {
+        drawFallbackCanvasChart();
+      } else if (candleSeries && candles.length) {
+        candleSeries.setData(candles);
+      }
+    }
+
+    function updateCandleWithTick(price) {
+      const now = Math.floor(Date.now() / 1000);
+      const bucket = now - (now % 60);
+      if (candles.length === 0) {
+        fetchHistoricalCandles(price);
+        return;
+      }
+      const last = candles[candles.length - 1];
+      if (last.time === bucket) {
+        last.high = Math.max(last.high, price);
+        last.low = Math.min(last.low, price);
+        last.close = price;
+        if (useCanvasFallback) {
+          drawFallbackCanvasChart();
+        } else if (candleSeries) {
+          candleSeries.update(last);
+        }
+      } else {
+        const nextBar = { time: bucket, open: last.close, high: price, low: price, close: price };
+        candles.push(nextBar);
+        if (candles.length > 80) candles.shift();
+        if (useCanvasFallback) {
+          drawFallbackCanvasChart();
+        } else if (candleSeries) {
+          candleSeries.update(nextBar);
+        }
+      }
+    }
+
+    function drawLevelLines() {
+      if (!gexData) return;
+      if (useCanvasFallback) {
+        drawFallbackCanvasChart();
+        return;
+      }
+      if (!candleSeries) return;
+      priceLines.forEach(pl => candleSeries.removePriceLine(pl));
+      priceLines = [];
+
+      const L = gexData.levels;
+      const specs = [
+        { price: L.call_wall, color: "#ef4444", style: 0, width: 2, title: "Call Wall" },
+        { price: L.put_wall, color: "#10b981", style: 0, width: 2, title: "Put Wall" },
+        { price: L.gamma_flip, color: "#f59e0b", style: 0, width: 2, title: "Gamma Flip" },
+        { price: L.peak_gex, color: "#a855f7", style: 0, width: 2, title: "Peak GEX" },
+        { price: L.iv_wall_above, color: "#38bdf8", style: 2, width: 1, title: "IV Wall +" },
+        { price: L.iv_wall_below, color: "#38bdf8", style: 2, width: 1, title: "IV Wall -" },
+      ];
+
+      specs.forEach(s => {
+        if (!s.price) return;
+        const pl = candleSeries.createPriceLine({
+          price: s.price,
+          color: s.color,
+          lineWidth: s.width,
+          lineStyle: s.style,
+          axisLabelVisible: true,
+          title: s.title,
+        });
+        priceLines.push(pl);
+      });
+    }
+
+    function renderGexProfile() {
+      const container = document.getElementById("gex-bars");
+      if (!gexData || !gexData.strike_profile) return;
+      const prof = gexData.strike_profile;
+      const maxAbs = Math.max(...prof.map(d => Math.abs(d.net_gex)), 1);
+
+      container.innerHTML = prof.map(row => {
+        const pct = Math.min(100, Math.round((Math.abs(row.net_gex) / maxAbs) * 100));
+        const isPos = row.net_gex >= 0;
+        const fmtGex = (row.net_gex / 1e6).toFixed(2) + "M";
+        return `
+          <div class="gex-bar-row">
+            <span>${row.strike.toFixed(0)}</span>
+            <div class="bar-track">
+              <div class="${isPos ? "bar-fill-pos" : "bar-fill-neg"}" style="width:${pct}%"></div>
+            </div>
+            <span style="text-align:right; color:${isPos ? "var(--green)" : "var(--red)"}">${fmtGex}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function loadLevels() {
+      try {
+        const res = await fetch("data/levels.json?t=" + Date.now());
+        if (!res.ok) throw new Error("levels.json HTTP " + res.status);
+        gexData = await res.json();
+      } catch (e) {
+        console.warn("Using fallback GEX data:", e);
+        gexData = FALLBACK_DATA;
+      }
+
+      const dt = new Date(gexData.updated_at);
+      document.getElementById("last-updated").textContent = isNaN(dt) ? gexData.updated_at : dt.toLocaleString();
+      document.getElementById("gld-ratio").textContent = (gexData.ratio || 10.84).toFixed(4);
+      document.getElementById("data-source").textContent = gexData.source || "CBOE/yfinance";
+
+      drawLevelLines();
+      renderGexProfile();
+      if (!currentPrice && gexData.spot_xauusd) {
+        currentPrice = gexData.spot_xauusd;
+        await fetchHistoricalCandles(currentPrice);
+        evaluateAll(currentPrice);
+      }
+    }
+
+    async function fetchLiveGoldPrice() {
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT", { cache: "no-store" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.price) return { price: parseFloat(json.price), feed: "Binance Gold" };
+        }
+      } catch (_) {}
+
+      try {
+        const res2 = await fetch("https://api.coinbase.com/v2/prices/PAXG-USD/spot", { cache: "no-store" });
+        if (res2.ok) {
+          const json2 = await res2.json();
+          if (json2 && json2.data && json2.data.amount) {
+            return { price: parseFloat(json2.data.amount), feed: "Coinbase Gold" };
+          }
+        }
+      } catch (_) {}
+
+      try {
+        const res3 = await fetch("https://api.kraken.com/0/public/Ticker?pair=PAXGUSD", { cache: "no-store" });
+        if (res3.ok) {
+          const json3 = await res3.json();
+          const key = Object.keys(json3.result || {})[0];
+          if (key) return { price: parseFloat(json3.result[key].c[0]), feed: "Kraken Gold" };
+        }
+      } catch (_) {}
+
+      return null;
+    }
+
+    async function pollLoop() {
+      const tick = await fetchLiveGoldPrice();
+      if (tick && tick.price) {
+        const price = tick.price;
+        if (candles.length === 0) {
+          await fetchHistoricalCandles(price);
+        }
+        currentPrice = price;
+        recentPrices.push(price);
+        if (recentPrices.length > 20) recentPrices.shift();
+
+        document.getElementById("live-price").textContent = price.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        document.getElementById("feed-status").textContent = `${tick.feed} • ${new Date().toLocaleTimeString()}`;
+        document.getElementById("feed-status").style.color = "var(--green)";
+
+        updateCandleWithTick(price);
+        evaluateAll(price);
+      } else {
+        document.getElementById("feed-status").textContent = "Feed retrying...";
+        document.getElementById("feed-status").style.color = "var(--yellow)";
+      }
+      setTimeout(pollLoop, cfg.pollSec * 1000);
+    }
+
+    function evaluateAll(price) {
+      if (!gexData) return;
+      const L = gexData.levels;
+
+      const allLevels = [
+        { name: "Call Wall", val: L.call_wall, color: "#ef4444", role: "RES" },
+        { name: "IV Wall Above", val: L.iv_wall_above, color: "#38bdf8", role: "RES" },
+        { name: "Peak GEX", val: L.peak_gex, color: "#a855f7", role: "MAGNET" },
+        { name: "Gamma Flip", val: L.gamma_flip, color: "#f59e0b", role: "FLIP" },
+        { name: "IV Wall Below", val: L.iv_wall_below, color: "#38bdf8", role: "SUP" },
+        { name: "Put Wall", val: L.put_wall, color: "#10b981", role: "SUP" },
+      ];
+
+      (gexData.top_positive_gex || []).slice(0, 2).forEach(x => {
+        allLevels.push({ name: "+GEX Support", val: x.strike, color: "#10b981", role: "SUP" });
+      });
+
+      const sorted = [...allLevels].sort((a, b) => b.val - a.val);
+      document.getElementById("levels-tbody").innerHTML = sorted.map(item => {
+        const diff = item.val - price;
+        const pct = (diff / price) * 100;
+        const sign = diff >= 0 ? "+" : "";
+        return `
+          <tr>
+            <td><span class="dot" style="background:${item.color}"></span>${item.name}</td>
+            <td><strong>${item.val.toFixed(2)}</strong></td>
+            <td style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${sign}${diff.toFixed(2)}</td>
+            <td>${sign}${pct.toFixed(2)}%</td>
+          </tr>
+        `;
+      }).join("");
+
+      const isStabilizing = price >= L.gamma_flip;
+      const regimeEl = document.getElementById("regime-pill");
+      if (isStabilizing) {
+        regimeEl.textContent = "Regime: STABILIZING (Above Flip — Fade Walls)";
+        regimeEl.style.color = "var(--green)";
+      } else {
+        regimeEl.textContent = "Regime: VOLATILE (Below Flip — Favor Breakouts)";
+        regimeEl.style.color = "var(--yellow)";
+      }
+
+      const band = cfg.poiPct / 100;
+      const stopMult = cfg.stopPct / 100;
+      const recentHigh = recentPrices.length ? Math.max(...recentPrices) : price;
+      const recentLow = recentPrices.length ? Math.min(...recentPrices) : price;
+
+      let signal = "WAIT";
+      let reason = "Price is between gamma levels. Waiting for POI zone test.";
+      let entry = "--", stop = "--", target = "--";
+      let activePoi = null;
+
+      for (const lvl of allLevels) {
+        const distPct = Math.abs(price - lvl.val) / lvl.val;
+        if (distPct <= band) {
+          activePoi = lvl;
+
+          if (lvl.role === "SUP" && price >= lvl.val && (price - recentLow) >= cfg.rejDollar * 0.25) {
+            signal = "BUY";
+            reason = `Price tested ${lvl.name} (${lvl.val.toFixed(2)}) from above and rejected higher.`;
+            entry = price.toFixed(2);
+            stop = (lvl.val * (1 - stopMult)).toFixed(2);
+            target = (price < L.gamma_flip ? L.gamma_flip : L.call_wall).toFixed(2);
+            break;
+          }
+
+          if (lvl.role === "RES" && price <= lvl.val && (recentHigh - price) >= cfg.rejDollar * 0.25) {
+            signal = "SELL";
+            reason = `Price tested ${lvl.name} (${lvl.val.toFixed(2)}) from below and rejected lower.`;
+            entry = price.toFixed(2);
+            stop = (lvl.val * (1 + stopMult)).toFixed(2);
+            target = (price > L.gamma_flip ? L.gamma_flip : L.put_wall).toFixed(2);
+            break;
+          }
+
+          signal = lvl.role === "SUP" ? "BUY" : (lvl.role === "RES" ? "SELL" : "WAIT");
+          reason = `Inside ${lvl.name} POI zone (${lvl.val.toFixed(2)} ± ${cfg.poiPct}%). Watch reaction.`;
+          entry = lvl.val.toFixed(2);
+          stop = (lvl.role === "SUP" ? lvl.val * (1 - stopMult) : lvl.val * (1 + stopMult)).toFixed(2);
+          target = (lvl.role === "SUP" ? L.gamma_flip : L.put_wall).toFixed(2);
+          break;
+        }
+      }
+
+      const badge = document.getElementById("signal-badge");
+      badge.textContent = signal;
+      badge.className = "signal-badge sig-" + signal;
+      document.getElementById("signal-reason").textContent = reason;
+      document.getElementById("plan-entry").textContent = entry;
+      document.getElementById("plan-stop").textContent = stop;
+      document.getElementById("plan-target").textContent = target;
+
+      if (activePoi && Date.now() > snoozedUntil) {
+        const key = `${activePoi.name}_${Math.floor(Date.now() / 300000)}`;
+        if (key !== lastAlertKey) {
+          lastAlertKey = key;
+          const actionText = activePoi.role === "RES" ? "SELL NOW" : "BUY NOW";
+          fireAlarm(`${actionText} at ${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, reason, activePoi.role !== "RES");
+        }
+      }
+    }
+
+    function enableAudioAndNotifs() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+      }
+      logEvent("Audio & Browser Notifications enabled.");
+    }
+
+    function playSirenTone() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.45, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.45);
+      } catch (e) {}
+    }
+
+    function fireAlarm(title, subtitle, isBuy) {
+      const overlay = document.getElementById("alarm-overlay");
+      document.getElementById("alarm-title").textContent = title;
+      document.getElementById("alarm-sub").textContent = subtitle;
+      overlay.className = isBuy ? "buy-mode" : "";
+      overlay.style.display = "flex";
+
+      playSirenTone();
+      clearInterval(alarmInterval);
+      alarmInterval = setInterval(playSirenTone, 900);
+
+      if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: subtitle });
+      }
+
+      logEvent(`<strong>${title}</strong> — ${subtitle}`);
+    }
+
+    function dismissAlarm() {
+      document.getElementById("alarm-overlay").style.display = "none";
+      clearInterval(alarmInterval);
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+
+    function snoozeAlarm() {
+      snoozedUntil = Date.now() + 10 * 60 * 1000;
+      dismissAlarm();
+      logEvent("Alarm snoozed for 10 minutes.");
+    }
+
+    function triggerTestAlarm() {
+      enableAudioAndNotifs();
+      const samplePrice = currentPrice ? currentPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : "3,494.00";
+      fireAlarm(`BUY NOW at ${samplePrice}`, "Test POI Alert: Put Wall rejection simulation.", true);
+    }
+
+    function logEvent(htmlMsg) {
+      const box = document.getElementById("alert-log");
+      if (box.textContent === "No alerts triggered yet.") box.innerHTML = "";
+      const entry = document.createElement("div");
+      entry.innerHTML = `<span style="color:var(--blue)">[${new Date().toLocaleTimeString()}]</span> ${htmlMsg}`;
+      box.prepend(entry);
+    }
+
+    function clearLogs() {
+      document.getElementById("alert-log").textContent = "No alerts triggered yet.";
+    }
+
+    (async function boot() {
+      loadSettingsUI();
+      await initChart();
+      await loadLevels();
+      drawLevelLines();
+      pollLoop();
+    })();
+  </script>
+</body>
+</html>
